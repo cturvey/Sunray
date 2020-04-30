@@ -1,0 +1,37 @@
+{
+  "name": "ardumower-sunray-app",
+  "version": "1.0.4",
+  "title": "Ardumower Sunray App",
+  "description": "Ardumower Sunray App",
+  "tags": [
+    {
+      "label": "arduino",
+      "type": "platform"
+    },
+    {
+      "label": "ble",
+      "type": "comm"
+    }
+  ],
+  "libraries": [
+    {
+      "name": "jquery",
+      "version": "2.1.1"
+    },
+    {
+      "name": "smoothie",
+      "version": "1.28"
+    }
+  ],
+  "plugins": [],
+  "index-file": "index.html",
+  "app-dir": "",
+  "uuid": "3de317f1-1309-49d3-9100-97bd13ffd203",
+  "icon": "app-icon.png",
+  "doc-url": "http://www.ardumower.de",
+  "long-description": "Ardumower Sunray App",
+  "cordova-id": "de.grauonline.de.ardumower-sunray",
+  "author-name": "Grau GmbH",
+  "author-email": "info@grauonline.de",
+  "author-url": "https://www.grauonline.de"
+}

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<!--
+Ardumower Sunray App 
+Copyright (c) 2013-2020 by Alexander Grau, Grau GmbH
+Licensed GPLv3 for open source use
+or Grau GmbH Commercial License for commercial use (http://grauonline.de/cms2/?page_id=153)
+
+using BLE (Bluetooth Low Energy). Run with Evothings Viewer/CGTek Viewer.
+-->
+<head>
+	<meta http-equiv="cache-control" content="max-age=0" />
+  <meta http-equiv="cache-control" content="no-store" />
+  <meta http-equiv="expires" content="-1" />
+  <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+  <meta http-equiv="pragma" content="no-cache" />
+
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no
+		initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+
+	<title>Ardumower Sunray App</title>
+
+	<style>
+		@import 'ui/css/evothings-app.css';				
+	</style>
+	<link rel="stylesheet" type="text/css" href="style.css?n=53">
+
+	<script>
+  var consoleMsg = [];
+  // Redirect console.log to Evothings Workbench.
+  //if (window.hyper && window.hyper.log) { console.log = hyper.log }
+  if (true){
+    var oldConsole = console.log;
+    console.log = function(msg){
+      //document.getElementById("console").innerHTML += msg;   
+      consoleMsg.push( msg );         
+      oldConsole.apply(console, arguments);
+    }
+  }  
+	window.onerror = function(msg, url, line)
+	{
+		console.log(msg + ": " + url + ":" + line);
+	};
+	</script>
+
+  <script src="cordova.js"></script> 
+  <script src="libs/evothings/evothings.js"></script>
+  <script src="libs/evothings/ui/ui.js"></script>
+	<script src="libs/evothings/arduinoble/arduinoble.js"></script>		
+  
+  <script src="libs/jquery/jquery.js"></script>		
+  <script src="plot.js"></script>  
+  <!-- <script src="graph.js"></script>   -->
+  <!-- <script src="path.js"></script> -->
+  <script src="map.js?n=32"></script>  
+  <script src="app.js?n=21"></script>
+  <script src="virtualjoystick.js"></script>      
+  <script src="clipper.js"></script>
+
+</head>
+
+<body ontouchstart=""><!-- ontouchstart="" enables low-delay CSS transitions. -->
+
+	<header>		
+		<button class="back" onclick="history.back()">
+			<img class="backimg" src="ui/images/arrow-left.svg">
+		</button>				
+		<p id="title" onclick="setTimeout(function(){ window.location.reload(true) },1000)">Ardumower Sunray App</p>						
+		
+		<a href="ardumower.html">
+      <img id="robot" src="ui/images/ardumower_icon.png" alt="Ardumower">
+    </a>
+		<img id="warn" style="display:none" src="ui/images/warn.png" alt="Warn">				    
+
+		<!--<button class="menu" onclick=""><img src="ui/images/menu.svg" /></button>-->		
+	</header>		    
+  
+  <main>	
+  <p id="info">Initializing...(<a href="https://play.google.com/store/apps/details?id=com.evothings.evothingsviewer">requires Evothings Viewer</a>)</p>		 
+    
+  <div id="startView" class="flexed">				                             
+      <div id="mapwrapper">
+        <canvas id="map"></canvas>    					
+        <div id="mapbuttonwrapper">
+           <input type="button" id="zoomin" value="+">
+           <input type="button" id="zoomout" value="-">
+           <input type="button" id="zoomfit" value="[o]">           
+           <input type="button" id="mapmove" value="<>">
+           <!-- <input type="button" id="maptoggle" value="01">    -->
+        </div>
+      </div>                   
+      
+      <div id="menuwrapper">           
+        <div id="joystick"></div>                       
+        <table height="200px">
+          <tr>
+            <td></td>
+            <td><span id="voltage">Voltage</span></td>
+          </tr>  
+          <tr>
+            <td></td>
+            <td><span id="stateX">E</span> <span id="stateY">N</span> <span id="stateDelta">Delta</span></td>            
+          </tr>  
+          <tr>
+            <td></td>
+            <td><span id="sol">Sol</span></td>
+          </tr>  
+          <tr>
+            <td></td>
+            <td><span id="points">#Points</span></td>
+          </tr>            
+        </table>          
+        <span style="display: flex; justify-content: space-between;">            
+          <button class="red" onclick="app.removePoint()">&#xA0;&#xA0;-&#xA0;&#xA0;</button>			      
+          <button class="red" onclick="app.addPoint()">&#xA0;&#xA0;+&#xA0;&#xA0;</button>			      
+          <button class="red" onclick="app.endPoints()">END</button>
+          <button class="green" onclick="app.menuView()">&#xA0;...&#xA0;&#xA0;</button>				            
+          <button class="blue" onclick="app.consoleView()">&#xA0;=&#xA0;&#xA0;</button>				                  
+          <!--<button id="cellmath" class="yellow" style="background-color: white" onclick="app.onCellMath()">Now</button>	      -->
+        </span>    
+      </div>
+      
+    </div>
+  </div>   
+
+    
+  <div id="menuView" style="display:none">
+    <button id="back" class="red wide" onclick="app.startView()">&lt; Back</button>
+    <button id="stopmowing" class="green wide" onclick="app.stopMowing()">STOP</button>		    
+    <button id="startmowing" class="green wide" onclick="app.startMowing()">START</button>		    
+    <button id="scan" class="green wide" onclick="app.scanView()">Connect</button>		       
+    <button id="calcmap" class="green wide" onclick="app.calcMap()">Calc map</button>		    
+    <button id="uploadmap" class="green wide" onclick="app.uploadMap()">Upload map</button>		    
+    <button id="mow" class="green wide" onclick="app.toggleMow()">Mow is OFF</button>		        
+    <button id="clearmap" class="green wide" onclick="app.clearMap()">Clear map</button>		        
+    <button id="recordmode" class="green wide" onclick="app.recordMode()">Record mode: Perimeter</button>		        
+    <button id="maps" class="green wide" onclick="app.mapsView()">Switch map</button>
+    <button id="posmaps" class="green wide" onclick="app.posView()">Position mode</button>		            
+    <button id="statistics" class="green wide" onclick="app.statsView()">Statistics</button>		            
+    <button id="sharemaps" class="green wide" onclick="app.shareView()">Share maps</button>		            
+    <button id="mapdata" class="green wide" onclick="app.dataView()">Map data</button>		            
+    <button id="finish" class="green wide" onclick="app.toggleFinishAndRestart()">Finish and restart is OFF</button>		        
+    <button id="debug" class="green wide" onclick="app.toggleDebug()">Debug is OFF</button>		        
+    <button id="pattern" class="green wide" onclick="app.togglePattern()">Pattern</button>		        
+    Speed(m/s): <span id="speed"></span>
+    <input type="range" id="speedslider" min="0.01" max="0.4" step="0.02" onchange="app.setSpeed(value)" value="0.2">
+    Fix timeout(s): <span id="fixtimeout"></span>
+    <input type="range" id="fixtimeoutslider" min="0" max="100" step="1" onchange="app.setFixTimeout(value)" value="100">                
+    Target waypoint(%): <span id="wayperc"></span>
+    <input type="range" id="waypercslider" min="0" max="100" step="1" onchange="app.setWayPerc(value)" value="0">                
+    Pattern angle(deg): <span id="patternangle"></span>
+    <input type="range" id="patternslider" min="0" max="180" step="1" onchange="app.setPatternAngle(value)" value="0">                    
+    Firmware version: <span id="firmware"></span>
+  </div>	
+  
+  <div id="statsView" style="display:none">				
+    <button id="back" class="red" onclick="app.menuView()">&lt; Back</button>		
+    &#xA0;&#xA0;&#xA0;<br>
+    <p>Idle duration: <span id="idleduration"></span></p>
+    <p>Charge duration: <span id="chargeduration"></span></p>
+    <p>Mow duration:  <span id="mowduration"></span></p>
+    <p>Mow float duration: <span id="floatduration"></span></p>
+    <p>Mow fix duration: <span id="fixduration"></span></p>
+    <p>Mow float-to-fix recoveries: <span id="fixrecoveries"></span></p>    
+    <p>Mow distance traveled: <span id="distancetraveled"></span></p>    
+    <p>Mow max DGPS age: <span id="maxage"></span></p>
+    <p>IMU recoveries: <span id="imurecoveries"></span></p>
+  </div>
+
+  <div id="mapsView" style="display:none">						
+    <button id="back" class="red" onclick="app.menuView()">&lt; Back</button>		
+    &#xA0;&#xA0;&#xA0;		
+    <br>Choose map: <span id="chooseMap"></span>		
+    <ul id="map-entries" class="dynamic"></ul>
+  </div>
+
+  <div id="posView" style="display:none">						        
+    <button id="back" class="red" onclick="app.posViewBack()">&lt; Back</button>				
+    <br>Position mode:    
+    <button id="posmode" class="green" onclick="app.posMode()">Relative</button>						        
+    <br>
+    For absolute mode, specify a coordinate (e.g. base position) as origin (0,0):
+    <br><label for="lonid">Lon:</label>
+    <input type="text" id="lonid" name="name" size="15">  
+    <br><label for="latid">Lat:</label>
+    <input type="text" id="latid" name="name" size="15">  
+  </div>
+  
+  <div id="shareView" style="display:none">						    
+    <button id="back" class="red" onclick="app.menuView()">&lt; Back</button>				
+    <button id="share" class="green" onclick="app.share()">Share</button>						    
+    <button id="importshare" class="green" onclick="app.importShare()">Import shared</button>
+    <br>
+    <label for="shareid">ID:</label>
+    <input type="text" id="shareid" name="name" size="15">  
+  </div>
+  
+  <div id="dataView" style="display:none">						    
+    <button id="back" class="red" onclick="app.menuView()">&lt; Back</button>				
+    <button id="copydata" class="green" onclick="app.copyData()">Copy</button>						
+    <button id="cleardata" class="green" onclick="app.clearData()">Clear</button>	
+    <button id="importdata" class="green" onclick="app.importData()">Import</button>						        					  
+    <textarea id="map-data" class="text" rows="13" ></textarea>
+  </div>	  
+
+  <div id="scanView" style="display:none">		
+    <button id="back" class="red wide" onclick="app.menuView()">&lt; Back</button>
+    <button id="connecttcp" class="green" onclick="app.connectTCP()">Connect</button>      
+    TCP:
+    <input type="text" id="tcpaddress" name="name" value="192.168.4.1" style="width:100px" size="20">
+    <br>
+    BLE devices (touch to connect):    
+    <ul id="found-devices" class="dynamic"></ul>
+  </div>	
+
+  <div id="consoleView" style="display:none">						
+    <button id="back" class="red" onclick="app.startView()">&lt; Back</button>		
+    &#xA0;&#xA0;&#xA0;
+    <button id="clearlog" class="green" onclick="app.clearConsole()">Clear</button>				
+    <div id="console" class="dynamic"></div>
+  </div>	
+  
+    
+  
+  </main>
+
+</body>
+
+</html>
+
