@@ -182,7 +182,7 @@ long UBLOX::unpack(int offset, int size) {
 
     for (int k=0; k<size; ++k) {
         value <<= 8;
-        value |= (0xFF & this->payload[offset+4-k-1]);
+        value |= (0xFF & this->payload[offset+size-k-1]);
     }
 
     return value;
